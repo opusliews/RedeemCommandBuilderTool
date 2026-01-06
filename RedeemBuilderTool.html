@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Redeem Command Builder - !eyes / !face</title>
+	<style>
+		:root {
+			--bg: #0b0d10;
+			--panel: #12161c;
+			--panel2: #0f1318;
+			--text: #e9eef5;
+			--muted: #a9b4c2;
+			--border: #243040;
+			--focus: #6aa8ff;
+			--ok: #52d28a;
+
+			/* New: a light green for copy buttons */
+			--copyBg: rgba(82,210,138,0.22);
+			--copyBgHover: rgba(82,210,138,0.32);
+			--copyBorder: rgba(82,210,138,0.65);
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+			background: radial-gradient(1200px 700px at 20% 0%, #142033 0%, var(--bg) 60%);
+			color: var(--text);
+		}
+
+		.wrap {
+			max-width: 980px;
+			margin: 0 auto;
+			padding: 24px 16px 40px;
+		}
+
+		h1 {
+			margin: 0 0 14px;
+			font-size: 22px;
+			letter-spacing: 0.2px;
+		}
+
+		.card {
+			background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			padding: 18px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+		}
+
+		/* New: tabs */
+		.tabs {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 14px;
+		}
+
+		.tabBtn {
+			flex: 1 1 auto;
+			padding: 10px 12px;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			background: rgba(255,255,255,0.03);
+			color: var(--text);
+			cursor: pointer;
+			transition: background 0.15s ease, transform 0.05s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+			font-weight: 600;
+		}
+
+		.tabBtn:hover { background: rgba(255,255,255,0.06); }
+		.tabBtn:active { transform: translateY(1px); }
+
+		.tabBtn[aria-selected="true"] {
+			border-color: rgba(106,168,255,0.55);
+			box-shadow: 0 0 0 3px rgba(106,168,255,0.16);
+			background: rgba(106,168,255,0.10);
+		}
+
+		.builder { display: none; }
+		.builder.active { display: block; }
+
+		.sectionTitle {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 12px;
+			margin: 0 0 12px;
+		}
+
+		.sectionTitle h2 {
+			margin: 0;
+			font-size: 18px;
+		}
+
+		.sectionTitle .hint {
+			color: var(--muted);
+			font-size: 13px;
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 14px;
+		}
+
+		@media (max-width: 760px) {
+			.grid { grid-template-columns: 1fr; }
+		}
+
+		.field {
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			padding: 12px;
+			background: rgba(255,255,255,0.02);
+		}
+
+		.field label {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			color: var(--muted);
+			font-size: 12px;
+			margin-bottom: 10px;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+
+		.row {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.colorSquare {
+			width: 36px;
+			height: 36px;
+			border-radius: 10px;
+			border: 1px solid var(--border);
+			box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+			flex: 0 0 auto;
+		}
+
+		input[type="color"] {
+			width: 54px;
+			height: 36px;
+			border: none;
+			background: transparent;
+			padding: 0;
+			cursor: pointer;
+		}
+
+		input[type="range"] {
+			width: 100%;
+		}
+
+		.valuePill {
+			min-width: 34px;
+			text-align: center;
+			padding: 6px 8px;
+			border-radius: 999px;
+			border: 1px solid var(--border);
+			color: var(--text);
+			background: rgba(255,255,255,0.03);
+			font-variant-numeric: tabular-nums;
+		}
+
+		.commandRow {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 10px;
+			margin-top: 14px;
+			align-items: center;
+		}
+
+		.commandRow input[type="text"] {
+			width: 100%;
+			padding: 10px 12px;
+			border-radius: 10px;
+			border: 1px solid var(--border);
+			background: rgba(0,0,0,0.25);
+			color: var(--text);
+			outline: none;
+		}
+
+		.commandRow input[type="text"]:focus {
+			border-color: var(--focus);
+			box-shadow: 0 0 0 3px rgba(106,168,255,0.18);
+		}
+
+		.btn {
+			padding: 10px 12px;
+			border-radius: 10px;
+			border: 1px solid var(--border);
+			background: rgba(255,255,255,0.04);
+			color: var(--text);
+			cursor: pointer;
+			transition: transform 0.05s ease, background 0.15s ease;
+			white-space: nowrap;
+		}
+
+		.btn:hover { background: rgba(255,255,255,0.07); }
+		.btn:active { transform: translateY(1px); }
+
+		/* New: copy buttons are light green */
+		.btn.copy {
+			border-color: var(--copyBorder);
+			background: var(--copyBg);
+		}
+		.btn.copy:hover { background: var(--copyBgHover); }
+
+		.btn.ok {
+			border-color: rgba(82,210,138,0.85);
+			box-shadow: 0 0 0 3px rgba(82,210,138,0.12);
+		}
+
+		.instructions {
+			margin-top: 18px;
+			color: var(--text);
+			line-height: 1.5;
+		}
+
+		.instructions p {
+			margin: 10px 0;
+		}
+
+		.instructions code {
+			background: rgba(255,255,255,0.06);
+			border: 1px solid rgba(255,255,255,0.08);
+			padding: 2px 6px;
+			border-radius: 8px;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 10px 0 14px;
+			overflow: hidden;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+		}
+
+		th, td {
+			padding: 10px 10px;
+			border-bottom: 1px solid rgba(36,48,64,0.7);
+			vertical-align: top;
+			font-size: 14px;
+		}
+
+		th {
+			text-align: left;
+			color: var(--muted);
+			font-size: 12px;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			background: rgba(255,255,255,0.03);
+		}
+
+		tr:last-child td { border-bottom: none; }
+
+		.faceList {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 10px;
+			margin-top: 10px;
+		}
+
+		.faceItem {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 10px;
+			align-items: center;
+			padding: 12px;
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			background: rgba(255,255,255,0.02);
+		}
+
+		.faceItem .label {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.faceItem .label .name {
+			font-size: 15px;
+			font-weight: 600;
+		}
+
+		.faceItem .label .cmd {
+			color: var(--muted);
+			font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+			font-size: 13px;
+		}
+
+		.smallNote {
+			color: var(--muted);
+			font-size: 12px;
+			margin-top: 8px;
+		}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<h1>Redeem Command Builder</h1>
+
+		<div class="card">
+			<!-- New: tab selectors -->
+			<div class="tabs" role="tablist" aria-label="Command builder tabs">
+				<button class="tabBtn" id="TabEyes" type="button" role="tab" aria-selected="true" aria-controls="EyesBuilder">
+					Eyes Command Builder
+				</button>
+				<button class="tabBtn" id="TabFace" type="button" role="tab" aria-selected="false" aria-controls="FaceBuilder">
+					Face Command Builder
+				</button>
+			</div>
+
+			<!-- Eyes Builder -->
+			<div class="builder active" id="EyesBuilder" role="tabpanel" aria-labelledby="TabEyes">
+				<div class="sectionTitle">
+					<h2>!eyes</h2>
+					<div class="hint">Adjust parameters → copy the command</div>
+				</div>
+
+				<div class="grid">
+					<!-- Color: Iris -->
+					<div class="field">
+						<label>
+							<span>ic — Iris color</span>
+							<span class="valuePill" id="IcHex">#DF6400</span>
+						</label>
+						<div class="row">
+							<div class="colorSquare" id="IcSquare" aria-hidden="true"></div>
+							<input id="IcColor" type="color" value="#DF6400" aria-label="Iris color picker (ic)" />
+						</div>
+					</div>
+
+					<!-- Color: Iris Effect -->
+					<div class="field">
+						<label>
+							<span>iec — Iris effect color</span>
+							<span class="valuePill" id="IecHex">#FFD000</span>
+						</label>
+						<div class="row">
+							<div class="colorSquare" id="IecSquare" aria-hidden="true"></div>
+							<input id="IecColor" type="color" value="#FFD000" aria-label="Iris effect color picker (iec)" />
+						</div>
+					</div>
+
+					<!-- Color: Sclera -->
+					<div class="field">
+						<label>
+							<span>sc — Sclera color</span>
+							<span class="valuePill" id="ScHex">#ffffff</span>
+						</label>
+						<div class="row">
+							<div class="colorSquare" id="ScSquare" aria-hidden="true"></div>
+							<input id="ScColor" type="color" value="#ffffff" aria-label="Sclera color picker (sc)" />
+						</div>
+					</div>
+
+					<!-- Slider: Iris Brightness -->
+					<div class="field">
+						<label>
+							<span>ibr — Iris brightness</span>
+							<span class="valuePill" id="IbrVal">2</span>
+						</label>
+						<div class="row">
+							<input id="IbrRange" type="range" min="1" max="10" step="1" value="2" aria-label="Iris brightness slider (ibr)" />
+						</div>
+					</div>
+
+					<!-- Slider: Iris Effect Brightness -->
+					<div class="field">
+						<label>
+							<span>iebr — Iris effect brightness</span>
+							<span class="valuePill" id="IebrVal">1</span>
+						</label>
+						<div class="row">
+							<input id="IebrRange" type="range" min="1" max="10" step="1" value="1" aria-label="Iris effect brightness slider (iebr)" />
+						</div>
+					</div>
+
+					<!-- Spacer to keep grid neat on wide screens -->
+					<div class="field" style="opacity:0; pointer-events:none;"></div>
+				</div>
+
+				<div class="commandRow" aria-label="Resulting !eyes command">
+					<input id="EyesCommand" type="text" readonly value="" aria-label="Generated !eyes command (read-only)" />
+					<button class="btn copy" id="CopyEyesBtn" type="button">Copy</button>
+				</div>
+
+				<div class="instructions" id="EyesInstructions">
+					<p>Eyes Instructions:</p>
+
+					<p>The !eyes redeem command sets the model eye colors. It follows the following structure:</p>
+
+					<p><code>!eyes &lt;parameter&gt;=&lt;value&gt; &lt;parameter&gt;=&lt;value&gt; ...</code></p>
+
+					<p>The command requires at least one parameter, but can have any combination, or all of them at once.</p>
+
+					<p>Values can be color or numerical.</p>
+
+					<p>Color values can be written as hex RGB values with or without a preceding #, or decimal (RGB) values comma separated.<br />
+					Valid color examples (for red, green and blue in that order):<br />
+					#FF0000<br />
+					00FF00<br />
+					0,0,255</p>
+
+					<p>List of Parameters:</p>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Color Parameter</th>
+								<th>What it changes</th>
+								<th>Example</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>ic</td>
+								<td>Iris color</td>
+								<td><code>ic=#df6400</code></td>
+							</tr>
+							<tr>
+								<td>iec</td>
+								<td>Iris effect color</td>
+								<td><code>iec=FFD000</code></td>
+							</tr>
+							<tr>
+								<td>sc</td>
+								<td>Sclera (white of the eye) color</td>
+								<td><code>sc=ffffff</code></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Numerical Parameter</th>
+								<th>What it changes</th>
+								<th>Example</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>ibr</td>
+								<td>Iris brightness</td>
+								<td><code>ibr=2</code></td>
+							</tr>
+							<tr>
+								<td>iebr</td>
+								<td>Iris effect brightness</td>
+								<td><code>iebr=1</code></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Face Builder -->
+			<div class="builder" id="FaceBuilder" role="tabpanel" aria-labelledby="TabFace">
+				<div class="sectionTitle">
+					<h2>!face</h2>
+					<div class="hint">Pick a preset → copy</div>
+				</div>
+
+				<div class="faceList" aria-label="Face command choices">
+					<div class="faceItem">
+						<div class="label">
+							<div class="name">Nick</div>
+							<div class="cmd" id="FaceNickCmd">!face nick</div>
+						</div>
+						<button class="btn copy" type="button" data-copy="#FaceNickCmd">Copy</button>
+					</div>
+
+					<div class="faceItem">
+						<div class="label">
+							<div class="name">Momo</div>
+							<div class="cmd" id="FaceMomoCmd">!face momo</div>
+						</div>
+						<button class="btn copy" type="button" data-copy="#FaceMomoCmd">Copy</button>
+					</div>
+
+					<div class="faceItem">
+						<div class="label">
+							<div class="name">Nonose</div>
+							<div class="cmd" id="FaceNonoseCmd">!face nonose</div>
+						</div>
+						<button class="btn copy" type="button" data-copy="#FaceNonoseCmd">Copy</button>
+					</div>
+
+					<div class="smallNote">Tip: viewers can paste the copied command directly into chat.</div>
+				</div>
+
+				<div class="instructions" id="FaceInstructions">
+					<p>Face Instructions:</p>
+
+					<p>The !face redeem command morphs the model's face. It follows the following structure:</p>
+
+					<p><code>!face &lt;parameter&gt;</code></p>
+
+					<p>List of Parameters: Momo, Nick, Nonose</p>
+
+					<p>All command choices:</p>
+
+					<p>!face nick<br />
+					!face momo<br />
+					!face nonose</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		(function () {
+			// ----- Helpers -----
+			function HexToCanonical(HexStr) {
+				if (!HexStr) return "#000000";
+				var S = ("" + HexStr).trim();
+				if (S[0] !== "#") S = "#" + S;
+				S = S.toLowerCase();
+				// normalize #rgb to #rrggbb
+				if (S.length === 4) {
+					S = "#" + S[1] + S[1] + S[2] + S[2] + S[3] + S[3];
+				}
+				if (S.length !== 7) return "#000000";
+				return S;
+			}
+
+			async function CopyText(Text, ButtonEl) {
+				var Ok = false;
+
+				try {
+					await navigator.clipboard.writeText(Text);
+					Ok = true;
+				} catch (Err) {
+					// Fallback for older browsers / insecure contexts
+					try {
+						var Temp = document.createElement("textarea");
+						Temp.value = Text;
+						Temp.setAttribute("readonly", "");
+						Temp.style.position = "fixed";
+						Temp.style.left = "-9999px";
+						document.body.appendChild(Temp);
+						Temp.select();
+						Ok = document.execCommand("copy");
+						document.body.removeChild(Temp);
+					} catch (Err2) {
+						Ok = false;
+					}
+				}
+
+				if (ButtonEl) {
+					var Old = ButtonEl.textContent;
+					ButtonEl.classList.toggle("ok", Ok);
+					ButtonEl.textContent = Ok ? "Copied!" : "Copy failed";
+					setTimeout(function () {
+						ButtonEl.classList.remove("ok");
+						ButtonEl.textContent = Old;
+					}, 900);
+				}
+
+				return Ok;
+			}
+
+			// ----- Tabs -----
+			var TabEyes = document.getElementById("TabEyes");
+			var TabFace = document.getElementById("TabFace");
+			var EyesBuilder = document.getElementById("EyesBuilder");
+			var FaceBuilder = document.getElementById("FaceBuilder");
+
+			function SetActiveTab(Which) {
+				var IsEyes = (Which === "eyes");
+
+				TabEyes.setAttribute("aria-selected", IsEyes ? "true" : "false");
+				TabFace.setAttribute("aria-selected", IsEyes ? "false" : "true");
+
+				EyesBuilder.classList.toggle("active", IsEyes);
+				FaceBuilder.classList.toggle("active", !IsEyes);
+			}
+
+			TabEyes.addEventListener("click", function () { SetActiveTab("eyes"); });
+			TabFace.addEventListener("click", function () { SetActiveTab("face"); });
+
+			// Default: eyes selected on page load
+			SetActiveTab("eyes");
+
+			// ----- Eyes UI wiring -----
+			var IcColor = document.getElementById("IcColor");
+			var IecColor = document.getElementById("IecColor");
+			var ScColor = document.getElementById("ScColor");
+
+			var IcSquare = document.getElementById("IcSquare");
+			var IecSquare = document.getElementById("IecSquare");
+			var ScSquare = document.getElementById("ScSquare");
+
+			var IcHex = document.getElementById("IcHex");
+			var IecHex = document.getElementById("IecHex");
+			var ScHex = document.getElementById("ScHex");
+
+			var IbrRange = document.getElementById("IbrRange");
+			var IebrRange = document.getElementById("IebrRange");
+
+			var IbrVal = document.getElementById("IbrVal");
+			var IebrVal = document.getElementById("IebrVal");
+
+			var EyesCommand = document.getElementById("EyesCommand");
+			var CopyEyesBtn = document.getElementById("CopyEyesBtn");
+
+			function UpdateEyesCommand() {
+				var Ic = HexToCanonical(IcColor.value);
+				var Iec = HexToCanonical(IecColor.value);
+				var Sc = HexToCanonical(ScColor.value);
+
+				var Ibr = parseInt(IbrRange.value, 10);
+				var Iebr = parseInt(IebrRange.value, 10);
+
+				// Update visuals
+				IcSquare.style.background = Ic;
+				IecSquare.style.background = Iec;
+				ScSquare.style.background = Sc;
+
+				IcHex.textContent = Ic;
+				IecHex.textContent = Iec;
+				ScHex.textContent = Sc;
+
+				IbrVal.textContent = String(Ibr);
+				IebrVal.textContent = String(Iebr);
+
+				// Tool uses them all
+				var Cmd = "!eyes ic=" + Ic + " iec=" + Iec + " sc=" + Sc + " ibr=" + Ibr + " iebr=" + Iebr;
+				EyesCommand.value = Cmd;
+			}
+
+			IcColor.addEventListener("input", UpdateEyesCommand);
+			IecColor.addEventListener("input", UpdateEyesCommand);
+			ScColor.addEventListener("input", UpdateEyesCommand);
+
+			IbrRange.addEventListener("input", UpdateEyesCommand);
+			IebrRange.addEventListener("input", UpdateEyesCommand);
+
+			CopyEyesBtn.addEventListener("click", function () {
+				CopyText(EyesCommand.value, CopyEyesBtn);
+			});
+
+			// Make read-only field easily selectable
+			EyesCommand.addEventListener("focus", function () {
+				EyesCommand.select();
+			});
+			EyesCommand.addEventListener("click", function () {
+				EyesCommand.select();
+			});
+
+			// ----- Face copy buttons -----
+			document.querySelectorAll("button[data-copy]").forEach(function (Btn) {
+				Btn.addEventListener("click", function () {
+					var Sel = Btn.getAttribute("data-copy");
+					var El = document.querySelector(Sel);
+					if (!El) return;
+					CopyText(El.textContent.trim(), Btn);
+				});
+			});
+
+			// Initial render after page load
+			UpdateEyesCommand();
+		})();
+	</script>
+</body>
+</html>
